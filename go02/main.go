@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -17,10 +18,19 @@ func intAbs(x int) int {
 }
 
 func checkReportValid(reportValues []string) bool {
-	reportValid := true // assume until otherwise proven
+	reportProblems := 0
 	direction := 0
+	checkDirection := true
+	var checkedReportValues []int
+
 	for idx, val := range reportValues {
+		curVal, err := strconv.Atoi(val)
+		if err != nil {
+			log.Fatalf("Failed to Atoi curVal")
+		}
+
 		if idx == 0 {
+			checkedReportValues = append(checkedReportValues, curVal)
 			continue
 		}
 
@@ -28,49 +38,59 @@ func checkReportValid(reportValues []string) bool {
 		if err != nil {
 			log.Fatalf("Failed to Atoi prevVal")
 		}
-		curVal, err := strconv.Atoi(val)
-		if err != nil {
-			log.Fatalf("Failed to Atoi curVal")
-		}
 
-		if idx == 1 {
+		if checkDirection {
 			// set which direction we assume we're going in
 			if curVal > prevVal {
 				direction = 1
+				checkDirection = false
 			} else if curVal < prevVal {
 				direction = -1
+				checkDirection = false
 			} else {
-				log.Println("Value is neither higher or lower, bad report")
-				reportValid = false
-				break
+				log.Println("Value is neither higher or lower, postponing direction check")
 			}
 		} else {
 			if curVal < prevVal && direction > 0 {
 				log.Println("value is lower than previous, but direction says it should be higher")
-				reportValid = false
-				break
+				reportProblems += 1
 			} else if curVal > prevVal && direction < 0 {
 				log.Println("value is higher than previous, but direction says it should be lower")
-				reportValid = false
-				break
+				reportProblems += 1
 			}
 		}
 
 		if intAbs(prevVal - curVal) > 3 {
 			log.Println("Difference is bigger than 3, report is invalid")
-			reportValid = false
-			break
+			reportProblems += 1
 		}
 
 		if prevVal == curVal {
 			log.Println("Must differ by at least one, report is invalid")
-			reportValid = false
-			break
+			reportProblems += 1
 		}
+
+		if slices.Contains(checkedReportValues[:len(checkedReportValues)-1], curVal) {
+			log.Printf("Current value already in checked values: %d\n", curVal)
+			reportProblems += 1
+		}
+
+		checkedReportValues = append(checkedReportValues, curVal)
 
 	}
 
-	return reportValid
+	if reportProblems == len(reportValues) - 2 {
+		log.Println("DEBUG: possible direction problem in autodetection between first and second value!")
+	}
+
+	if reportProblems == 0 {
+		return true
+	} else if reportProblems == 1 {
+		log.Println("Problem Dampener initiated, only one problem spotted.")
+		return true
+	}
+	return false
+
 }
 
 func main() {
