@@ -38,7 +38,7 @@ func main() {
 	}
 
 	// Compile the regex pattern
-	pattern := `mul\(\d+,\d+\)`
+	pattern := `mul\(\d{1,3},\d{1,3}\)`
 	re := regexp.MustCompile(pattern)
 
 	// Find all matches
