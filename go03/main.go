@@ -41,10 +41,14 @@ func main() {
 		//log.Printf("DEBUG: idx = %d\n", idx)
 		// find closing parenthesis (or first corrupted data)
 		end := 4
-		for _, val := range string(data[idx+4:]) {
+		for i, val := range string(data[idx+4:]) {
 			if unicode.IsDigit(val) || val == ',' {
 				end += 1
 			} else {
+				break
+			}
+
+			if i > 7 { // 1-3 digits *2 + ','
 				break
 			}
 		}
