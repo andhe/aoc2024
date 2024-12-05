@@ -23,6 +23,7 @@ func main() {
 	var rules []rule
 	var updates []update
 	var correctUpdates []update
+	var needsFixup []update
 
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -78,8 +79,9 @@ func main() {
 	}
 
 	for idx, u := range updates {
-		if !checkUpdateAgainstRules(u, rules) {
+		if !checkUpdateAgainstRules(&u, rules, false) {
 			log.Printf("DEBUG: Update %d failed rules check\n", idx)
+			needsFixup = append(needsFixup, u)
 		} else {
 			correctUpdates = append(correctUpdates, u)
 		}
@@ -88,15 +90,34 @@ func main() {
 	midSum := 0
 	for _, u := range correctUpdates {
 		mid := u.pages[(len(u.pages))/2]
-		log.Printf("DEBUG: mid==%d\n", mid)
+		//log.Printf("DEBUG: mid==%d\n", mid)
 		midSum += mid
 	}
 
-	log.Printf("Sum: %d\n", midSum)
+
+	//log.Println("=============================================")
+	fixupSum := 0
+	for _, u := range needsFixup {
+		//log.Printf("DEBUG: u before fixup %v\n", u)
+		checkUpdateAgainstRules(&u, rules, true)
+		if !checkUpdateAgainstRules(&u, rules, false) {
+			log.Printf("DEBUG: u:%v\n", u)
+			panic("fixed up u still not valid according to rules")
+		}
+		mid := u.pages[len(u.pages)/2]
+		//log.Printf("DEBUG: fixup mid is %d (%v)\n", mid, u)
+		fixupSum += mid
+	}
+	//log.Println("=============================================")
+
+	log.Printf("Correct Sum: %d\n", midSum)
+	log.Printf("Fixup Sum: %d\n", fixupSum)
 }
 
 
-func checkUpdateAgainstRules(u update, rules []rule) bool {
+func checkUpdateAgainstRules(u *update, rules []rule, fixup bool) bool {
+	fixedUp := false
+
 	for idx, r := range rules {
 		xoff := slices.Index(u.pages, r.x)
 		yoff := slices.Index(u.pages, r.y)
@@ -108,10 +129,25 @@ func checkUpdateAgainstRules(u update, rules []rule) bool {
 
 		// verify x comes before y in u.pages
 		if xoff >= yoff {
-			log.Printf("DEBUG: rule %d (%v) violated in %v\n", idx, r, u)
-			return false
+			if !fixup {
+				log.Printf("DEBUG: rule %d (%v) violated in %v\n", idx, r, u)
+				return false
+			}
+
+			// else swap incorrect numbers
+			//log.Println("DEBUG: fixing up rule")
+			u.pages[xoff] = r.y
+			u.pages[yoff] = r.x
+
+			fixedUp = true
 		}
 	}
 
+	if fixedUp {
+		//log.Printf("DEBUG: fixed up... again!")
+		return checkUpdateAgainstRules(u, rules, fixup)
+	}
+
+	//log.Println("DEBUG: rule checked ok")
 	return true
 }
