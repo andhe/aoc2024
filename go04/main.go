@@ -51,9 +51,14 @@ func moveDir(matrix []string, voffset *int, hoffset *int, dir int) bool {
 }
 
 func checkWordDir(matrix []string, voffset int, hoffset int, word string, dir int) int {
-	for _, val := range word {
+	for idx, val := range word {
 		if val != rune(matrix[voffset][hoffset]) {
 			return 0
+		}
+
+		if idx == len(word)-1 {
+			// don't need to move more, we're done. Entire word now checked.
+			return 1
 		}
 
 		switch dir {
@@ -76,6 +81,7 @@ func checkWordDir(matrix []string, voffset int, hoffset int, word string, dir in
 				return 0
 			}
 		case NW:
+			log.Printf("DEBUG: checked NW: %d/%d\n", hoffset, voffset)
 			if !moveDir(matrix, &voffset, &hoffset, Up) || !moveDir(matrix, &voffset, &hoffset, Left) {
 				return 0
 			}
@@ -87,6 +93,8 @@ func checkWordDir(matrix []string, voffset int, hoffset int, word string, dir in
 			panic("Unhandled direction")
 		}
 	}
+
+	log.Printf("Found word in dir: %d\n", dir)
 
 	return 1
 }
