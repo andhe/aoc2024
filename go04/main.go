@@ -81,7 +81,7 @@ func checkWordDir(matrix []string, voffset int, hoffset int, word string, dir in
 				return 0
 			}
 		case NW:
-			log.Printf("DEBUG: checked NW: %d/%d\n", hoffset, voffset)
+			//log.Printf("DEBUG: checked NW: %d/%d\n", hoffset, voffset)
 			if !moveDir(matrix, &voffset, &hoffset, Up) || !moveDir(matrix, &voffset, &hoffset, Left) {
 				return 0
 			}
