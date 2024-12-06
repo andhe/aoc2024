@@ -161,6 +161,12 @@ func main() {
 		}
 	}
 
+	fmt.Println("")
+	for _, v := range matrix {
+		fmt.Printf("%s\n", v)
+	}
+	fmt.Println("")
+
 	fmt.Printf("Steps: %d, unique: %d\n", steps, uniquePlaces)
 
 }
