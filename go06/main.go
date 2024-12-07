@@ -101,6 +101,39 @@ func needsTurn(matrix []string, voffset int, hoffset int, dir int) bool {
 
 }
 
+func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool {
+	switch dir {
+	case UP:
+		// check right
+	case DOWN:
+		// check left
+	case LEFT:
+		// check up
+		if voffset-1 > 0 && matrix[voffset-1][hoffset] == '|' {
+			return true
+		}
+	case RIGHT:
+		// check down
+	default:
+		panic("Unknown direction when checkinf for start loop")
+	}
+
+	return false
+}
+
+func markObstacleAtNextMove(matrixPtr *[]string, voffset int, hoffset int, dir int) {
+	matrix := *matrixPtr
+
+	nextv := voffset
+	nexth := hoffset
+	nextInMap := moveDir(matrix, &nextv, &nexth, dir)
+	if !nextInMap {
+		panic("What?!")
+	}
+
+	matrix[nextv] = matrix[nextv][:nexth] + "O" + matrix[nextv][nexth+1:]
+}
+
 func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 	matrix := *matrixPtr
 
@@ -126,6 +159,16 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 		}
 	default:
 		panic("Unknown direction when setting markToken")
+	}
+
+	if checkCanStartLoop(matrix, *voffset, *hoffset, *dir) {
+		// FIXME: record found loops and check if this is already found
+		alreadyFound := false
+		if !alreadyFound {
+			markObstacleAtNextMove(&matrix, *voffset, *hoffset, *dir)
+
+			return false
+		}
 	}
 
 	for canMove := !needsTurn(matrix, *voffset, *hoffset, *dir); !canMove;
