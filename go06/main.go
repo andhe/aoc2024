@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 )
 
 const (
@@ -21,10 +22,10 @@ func isGuard(matrix []string, voffset int, hoffset int) bool {
 
 func findGuard(matrix []string) (int, int) {
 	for voffset := 0; voffset < len(matrix)-1; voffset += 1 {
-		for hoffset, v := range matrix[voffset] {
+		for hoffset, _ := range matrix[voffset] {
 			if isGuard(matrix, voffset, hoffset) {
-				log.Printf("DEBUG: Found guard '%c' at %d/%d\n",
-					v, voffset, hoffset)
+				//log.Printf("DEBUG: Found guard '%c' at %d/%d\n",
+				//	matrix[voffset][hoffset], voffset, hoffset)
 				return voffset, hoffset
 			}
 		}
@@ -105,8 +106,14 @@ func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool 
 	switch dir {
 	case UP:
 		// check right
+		if hoffset+1 < len(matrix[voffset])-1 && matrix[voffset][hoffset+1] == '-' {
+			return true
+		}
 	case DOWN:
 		// check left
+		if hoffset-1 > 0 && matrix[voffset][hoffset-1] == '-' {
+			return true
+		}
 	case LEFT:
 		// check up
 		if voffset-1 > 0 && matrix[voffset-1][hoffset] == '|' {
@@ -114,6 +121,9 @@ func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool 
 		}
 	case RIGHT:
 		// check down
+		if voffset+1 < len(matrix)-1 && matrix[voffset+1][hoffset] == '|' {
+			return true
+		}
 	default:
 		panic("Unknown direction when checkinf for start loop")
 	}
@@ -121,9 +131,7 @@ func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool 
 	return false
 }
 
-func markObstacleAtNextMove(matrixPtr *[]string, voffset int, hoffset int, dir int) {
-	matrix := *matrixPtr
-
+func getNextPos(matrix []string, voffset int, hoffset int, dir int) (int,int) {
 	nextv := voffset
 	nexth := hoffset
 	nextInMap := moveDir(matrix, &nextv, &nexth, dir)
@@ -131,11 +139,20 @@ func markObstacleAtNextMove(matrixPtr *[]string, voffset int, hoffset int, dir i
 		panic("What?!")
 	}
 
+	return nextv, nexth
+}
+
+func markObstacleAtNextMove(matrixPtr *[]string, voffset int, hoffset int, dir int) {
+	matrix := *matrixPtr
+
+	nextv, nexth := getNextPos(matrix, voffset, hoffset, dir)
+
 	matrix[nextv] = matrix[nextv][:nexth] + "O" + matrix[nextv][nexth+1:]
 }
 
-func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
+func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int, possibleObstaclePositionsPtr *[]pos) bool {
 	matrix := *matrixPtr
+	possibleObstaclePositions := *possibleObstaclePositionsPtr
 
 	// mark position as visited
 	markToken := 'X'
@@ -162,10 +179,11 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 	}
 
 	if checkCanStartLoop(matrix, *voffset, *hoffset, *dir) {
-		// FIXME: record found loops and check if this is already found
-		alreadyFound := false
-		if !alreadyFound {
+		nextv, nexth := getNextPos(matrix, *voffset, *hoffset, *dir)
+		if !slices.Contains(possibleObstaclePositions, pos{nextv, nexth}) {
 			markObstacleAtNextMove(&matrix, *voffset, *hoffset, *dir)
+
+			*possibleObstaclePositionsPtr = append(possibleObstaclePositions, pos{nextv, nexth})
 
 			return false
 		}
@@ -193,8 +211,22 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 
 }
 
+func printMatrix(matrix []string) {
+	fmt.Println("")
+	for _, v := range matrix {
+		fmt.Printf("%s\n", v)
+	}
+	fmt.Println("")
+}
+
+type pos struct {
+	vert int
+	hor int
+}
+
 func main() {
-	var matrix []string
+	var origmatrix []string
+	var possibleObstaclePositions []pos
 
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -206,7 +238,7 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		matrix = append(matrix, line)
+		origmatrix = append(origmatrix, line)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -214,31 +246,42 @@ func main() {
 	}
 
 	// walk and calculate steps.
-	voffset, hoffset := findGuard(matrix)
-	currentDir := checkCurrentDirection(matrix, voffset, hoffset)
-	startv := voffset
-	starth := hoffset
-	startGuardToken := matrix[startv][starth]
 	steps := 0
 	uniquePlaces := 1
 
-	for moveGuard(&matrix, &voffset, &hoffset, &currentDir) {
-		log.Printf("DEBUG: currently at %d/%d (dir %d)\n",
-			voffset, hoffset, currentDir)
-		steps += 1
-		if matrix[voffset][hoffset] == '.' {
-			uniquePlaces += 1
+	for {
+		numObstacles := len(possibleObstaclePositions)
+
+		matrix := make([]string, len(origmatrix))
+		copy(matrix, origmatrix)
+
+		voffset, hoffset := findGuard(origmatrix)
+		currentDir := checkCurrentDirection(origmatrix, voffset, hoffset)
+
+		startv := voffset
+		starth := hoffset
+		startGuardToken := origmatrix[startv][starth]
+
+		for moveGuard(&matrix, &voffset, &hoffset, &currentDir, &possibleObstaclePositions) {
+			//log.Printf("DEBUG: currently at %d/%d (dir %d)\n",
+			//	voffset, hoffset, currentDir)
+			steps += 1
+			if matrix[voffset][hoffset] == '.' {
+				uniquePlaces += 1
+			}
 		}
-	}
 
-	// restore starting position to guard symbol
-	matrix[startv] = matrix[startv][:starth] + string(startGuardToken) + matrix[startv][starth+1:]
+		// restore starting position to guard symbol
+		matrix[startv] = matrix[startv][:starth] + string(startGuardToken) + matrix[startv][starth+1:]
 
-	fmt.Println("")
-	for _, v := range matrix {
-		fmt.Printf("%s\n", v)
+		printMatrix(matrix)
+
+		if len(possibleObstaclePositions) == numObstacles {
+			log.Printf("DEBUG: numObstacles:%d\n", numObstacles)
+			break
+		}
+
 	}
-	fmt.Println("")
 
 	fmt.Printf("Steps: %d, unique: %d\n", steps, uniquePlaces)
 
