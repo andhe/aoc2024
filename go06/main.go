@@ -106,8 +106,27 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 
 	// mark position as visited
 	markToken := 'X'
-	//matrix[*voffset][*hoffset] = markToken
-	matrix[*voffset] = matrix[*voffset][:*hoffset] + string(markToken) + matrix[*voffset][*hoffset+1:]
+
+	switch *dir {
+	case UP:
+		fallthrough
+	case DOWN:
+		if matrix[*voffset][*hoffset] == '.' {
+			markToken = '|'
+		} else {
+			markToken = '+'
+		}
+	case LEFT:
+		fallthrough
+	case RIGHT:
+		if matrix[*voffset][*hoffset] == '.' {
+			markToken = '-'
+		} else {
+			markToken = '+'
+		}
+	default:
+		panic("Unknown direction when setting markToken")
+	}
 
 	for canMove := !needsTurn(matrix, *voffset, *hoffset, *dir); !canMove;
 	canMove = !needsTurn(matrix, *voffset, *hoffset, *dir) {
@@ -116,8 +135,12 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 		if *dir >= DirectionMax {
 			*dir = 0
 		}
+		markToken = '+'
 
 	}
+
+	//matrix[*voffset][*hoffset] = markToken
+	matrix[*voffset] = matrix[*voffset][:*hoffset] + string(markToken) + matrix[*voffset][*hoffset+1:]
 
 	inMap := moveDir(matrix, voffset, hoffset, *dir)
 	if !inMap {
@@ -150,6 +173,9 @@ func main() {
 	// walk and calculate steps.
 	voffset, hoffset := findGuard(matrix)
 	currentDir := checkCurrentDirection(matrix, voffset, hoffset)
+	startv := voffset
+	starth := hoffset
+	startGuardToken := matrix[startv][starth]
 	steps := 0
 	uniquePlaces := 1
 
@@ -157,10 +183,13 @@ func main() {
 		log.Printf("DEBUG: currently at %d/%d (dir %d)\n",
 			voffset, hoffset, currentDir)
 		steps += 1
-		if matrix[voffset][hoffset] != 'X' {
+		if matrix[voffset][hoffset] == '.' {
 			uniquePlaces += 1
 		}
 	}
+
+	// restore starting position to guard symbol
+	matrix[startv] = matrix[startv][:starth] + string(startGuardToken) + matrix[startv][starth+1:]
 
 	fmt.Println("")
 	for _, v := range matrix {
