@@ -13,6 +13,7 @@ type Node struct {
 	value int
 	left *Node
 	right *Node
+	concat *Node
 }
 
 func findLeafs(t *Node) []*Node {
@@ -21,7 +22,7 @@ func findLeafs(t *Node) []*Node {
 		tarr = append(tarr, t)
 		return tarr
 	} else {
-		return append(findLeafs(t.left), findLeafs(t.right)...)
+		return append(append(findLeafs(t.left), findLeafs(t.right)...), findLeafs(t.concat)...)
 	}
 }
 
@@ -37,20 +38,29 @@ func printTree(t *Node, indent uint) {
 
 	printTree(t.left, indent+1)
 	printTree(t.right, indent+1)
+	printTree(t.concat, indent+1)
 }
 
 func buildTree(values []int) *Node {
-	t := Node{ values[0], nil, nil }
+	t := Node{ values[0], nil, nil, nil }
 
 	for _, v := range values[1:] {
 		// find leafs and add/multiply
 		leafs := findLeafs(&t)
 
 		for _, l := range leafs {
-			nl := Node{l.value + v, nil, nil}
-			nr := Node{l.value * v, nil, nil}
+			nl := Node{l.value + v, nil, nil, nil}
+			nr := Node{l.value * v, nil, nil, nil}
+
+			c, err := strconv.Atoi(fmt.Sprintf("%d%d", l.value, v))
+			if err != nil {
+				log.Fatalf("Failed to atoi concatenated value")
+			}
+			nc := Node{c, nil, nil, nil}
+
 			l.left = &nl
 			l.right = &nr
+			l.concat = &nc
 		}
 	}
 
@@ -58,7 +68,7 @@ func buildTree(values []int) *Node {
 
 }
 
-func canAddMultiply(total int, values []int) bool {
+func canAddMultiplyConcatenate(total int, values []int) bool {
 
 	//log.Printf("DEBUG: total:%d, values:%v\n", total, values)
 
@@ -72,38 +82,6 @@ func canAddMultiply(total int, values []int) bool {
 		if l.value == total {
 			log.Printf("DEBUG: found total %d\n", total)
 			return true
-		}
-	}
-
-	return false
-}
-
-func canConcatenate(total int, values []int) bool {
-	//log.Printf("DEBUG: total:%d, values:%v\n", total, values)
-	// attempt a concatenation of all possible splits between values
-	for splits := len(values)-1; splits > 0; splits -= 1 {
-		left := values[:splits]
-		right := values[splits:]
-
-		//log.Printf("DEBUG: left:%v, right:%v\n", left, right)
-
-		lt := buildTree(left)
-		rt := buildTree(right)
-
-		for _, ll := range findLeafs(lt) {
-			for _, rl := range findLeafs(rt) {
-				catstr := fmt.Sprintf("%d%d", ll.value, rl.value)
-				//log.Printf("DEBUG: catstr:%s\n", catstr)
-				v, err := strconv.Atoi(catstr)
-				if err != nil {
-					panic("Failed atoi on concatenated value")
-				}
-
-				if v == total {
-					log.Printf("DEBUG: found concatenated %d\n", total)
-					return true
-				}
-			}
 		}
 	}
 
@@ -136,9 +114,7 @@ func isValid(input string) (int, error) {
 		values[idx] = i
 	}
 
-	if canAddMultiply(total, values) {
-		return total, nil
-	} else if canConcatenate(total, values) {
+	if canAddMultiplyConcatenate(total, values) {
 		return total, nil
 	} else {
 		return 0, nil
