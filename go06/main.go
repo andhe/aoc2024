@@ -105,8 +105,9 @@ func moveGuard(matrixPtr *[]string, voffset *int, hoffset *int, dir *int) bool {
 	matrix := *matrixPtr
 
 	// mark position as visited
-	//matrix[*voffset][*hoffset] = 'X'
-	matrix[*voffset] = matrix[*voffset][:*hoffset] + "X" + matrix[*voffset][*hoffset+1:]
+	markToken := 'X'
+	//matrix[*voffset][*hoffset] = markToken
+	matrix[*voffset] = matrix[*voffset][:*hoffset] + string(markToken) + matrix[*voffset][*hoffset+1:]
 
 	for canMove := !needsTurn(matrix, *voffset, *hoffset, *dir); !canMove;
 	canMove = !needsTurn(matrix, *voffset, *hoffset, *dir) {
