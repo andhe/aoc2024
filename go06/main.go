@@ -102,34 +102,48 @@ func needsTurn(matrix []string, voffset int, hoffset int, dir int) bool {
 
 }
 
+func directionHasObstacle(matrix []string, voffset int, hoffset int, dir int) bool {
+	for moveDir(matrix, &voffset, &hoffset, dir) {
+		if matrix[voffset][hoffset] == '#' {
+			return true
+		}
+	}
+	// we went outside map
+	return false
+}
+
 func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool {
 	switch dir {
 	case UP:
 		// check right
 		if hoffset+1 < len(matrix[voffset])-1 &&
 			(matrix[voffset][hoffset+1] == '-' ||
-			matrix[voffset][hoffset+1] == '+') {
+			matrix[voffset][hoffset+1] == '+') &&
+			directionHasObstacle(matrix, voffset, hoffset, RIGHT) {
 			return true
 		}
 	case DOWN:
 		// check left
 		if hoffset-1 > 0 &&
 			(matrix[voffset][hoffset-1] == '-' ||
-			matrix[voffset][hoffset-1] == '+') {
+			matrix[voffset][hoffset-1] == '+') &&
+			directionHasObstacle(matrix, voffset, hoffset, LEFT) {
 			return true
 		}
 	case LEFT:
 		// check up
 		if voffset-1 > 0 &&
 			(matrix[voffset-1][hoffset] == '|' ||
-			matrix[voffset-1][hoffset] == '+') {
+			matrix[voffset-1][hoffset] == '+') &&
+			directionHasObstacle(matrix, voffset, hoffset, UP) {
 			return true
 		}
 	case RIGHT:
 		// check down
 		if voffset+1 < len(matrix)-1 &&
 			(matrix[voffset+1][hoffset] == '|' ||
-			matrix[voffset+1][hoffset] == '+') {
+			matrix[voffset+1][hoffset] == '+') &&
+			directionHasObstacle(matrix, voffset, hoffset, DOWN) {
 			return true
 		}
 	default:
