@@ -102,6 +102,21 @@ func needsTurn(matrix []string, voffset int, hoffset int, dir int) bool {
 
 }
 
+func directionHasPassedObstacle(matrix []string, voffset int, hoffset int, dir int) bool {
+	prevv := voffset
+	prevh := hoffset
+	for moveDir(matrix, &voffset, &hoffset, dir) {
+		if matrix[voffset][hoffset] == '#' && matrix[prevv][prevh] == '+' {
+			return true
+		}
+		prevv = voffset
+		prevh = hoffset
+	}
+	// we went outside map
+	return false
+}
+
+
 func directionHasObstacle(matrix []string, voffset int, hoffset int, dir int) bool {
 	for moveDir(matrix, &voffset, &hoffset, dir) {
 		if matrix[voffset][hoffset] == '#' {
@@ -113,6 +128,7 @@ func directionHasObstacle(matrix []string, voffset int, hoffset int, dir int) bo
 }
 
 func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool {
+	// this atleast checks if there's a neighbouring path we can jump onto...
 	switch dir {
 	case UP:
 		// check right
@@ -148,6 +164,21 @@ func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool 
 		}
 	default:
 		panic("Unknown direction when checkinf for start loop")
+	}
+
+	// but we also need to check if there's a new path that will lead us
+	// onto a previous blocker and path.
+	switch dir {
+	case UP:
+	case DOWN:
+	case LEFT:
+		// check up
+		if voffset-1 > 0 && directionHasPassedObstacle(matrix, voffset, hoffset, UP) {
+			return true
+		}
+	case RIGHT:
+	default:
+		panic("unknown direction when checking for start loop again.")
 	}
 
 	return false
