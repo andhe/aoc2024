@@ -106,22 +106,30 @@ func checkCanStartLoop(matrix []string, voffset int, hoffset int, dir int) bool 
 	switch dir {
 	case UP:
 		// check right
-		if hoffset+1 < len(matrix[voffset])-1 && matrix[voffset][hoffset+1] == '-' {
+		if hoffset+1 < len(matrix[voffset])-1 &&
+			(matrix[voffset][hoffset+1] == '-' ||
+			matrix[voffset][hoffset+1] == '+') {
 			return true
 		}
 	case DOWN:
 		// check left
-		if hoffset-1 > 0 && matrix[voffset][hoffset-1] == '-' {
+		if hoffset-1 > 0 &&
+			(matrix[voffset][hoffset-1] == '-' ||
+			matrix[voffset][hoffset-1] == '+') {
 			return true
 		}
 	case LEFT:
 		// check up
-		if voffset-1 > 0 && matrix[voffset-1][hoffset] == '|' {
+		if voffset-1 > 0 &&
+			(matrix[voffset-1][hoffset] == '|' ||
+			matrix[voffset-1][hoffset] == '+') {
 			return true
 		}
 	case RIGHT:
 		// check down
-		if voffset+1 < len(matrix)-1 && matrix[voffset+1][hoffset] == '|' {
+		if voffset+1 < len(matrix)-1 &&
+			(matrix[voffset+1][hoffset] == '|' ||
+			matrix[voffset+1][hoffset] == '+') {
 			return true
 		}
 	default:
