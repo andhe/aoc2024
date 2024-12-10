@@ -94,6 +94,13 @@ func getAntiForPositions(ps []pos, lines []string) []pos {
 			hdiff *= -1
 		}
 
+		maxH := len(lines[0])
+		maxV := len(lines)
+		maxPos := pos{ v: maxV, h: maxH }
+
+		wrapped := false
+
+		for !wrapped {
 		var a1v, b1v, a1h, b1h int
 		if a.v < b.v {
 			a1v = a.v-vdiff
@@ -110,21 +117,30 @@ func getAntiForPositions(ps []pos, lines []string) []pos {
 			b1h = b.h - hdiff
 		}
 
-		maxH := len(lines[0])
-		maxV := len(lines)
-		maxPos := pos{ v: maxV, h: maxH }
-
 		apos := pos{ v: a1v, h: a1h }
 		bpos := pos{ v:b1v, h: b1h }
+
+		var wrappedA, wrappedB bool
 		if !wrapVert(&a1v, maxPos) && !wrapHor(&a1h, maxPos) {
 			antinodes = append(antinodes, apos)
+			log.Printf("DEBUG: antinodes at %v\n", apos)
+		} else {
+			wrappedA = true
 		}
 		if !wrapVert(&b1v, maxPos) && !wrapHor(&b1h, maxPos) {
 			antinodes = append(antinodes, bpos)
+			log.Printf("DEBUG: antinodes at %v\n", bpos)
+		} else {
+			wrappedB = true
 		}
 
-		log.Printf("DEBUG: antinodes at %v and %v\n",
-			apos, bpos)
+		wrapped = wrappedA && wrappedB
+
+
+		a = apos
+		b = bpos
+
+		}
 
 	}
 
@@ -162,7 +178,7 @@ func drawMap(m map[rune][]pos, antip map[rune][]pos, maxPos pos) []string {
 	return matrix
 }
 
-func uniquePositions(antip map[rune][]pos) int {
+func uniquePositions(m map[rune][]pos, antip map[rune][]pos) int {
 	var pm []pos
 	for key := range antip {
 		for i := range antip[key] {
@@ -174,6 +190,17 @@ func uniquePositions(antip map[rune][]pos) int {
 			}
 		}
 	}
+	for key := range m {
+		for i := range m[key] {
+			p := m[key][i]
+			if !slices.Contains(pm, p) {
+				pm = append(pm, p)
+			//} else {
+			//	log.Printf("DEBUG: duplicate m: %v\n", p)
+			}
+		}
+	}
+
 	log.Printf("DEBUG: Unique antinode pos: %v\n", pm)
 
 	return len(pm)
@@ -218,6 +245,6 @@ func main() {
 		fmt.Println(l)
 	}
 
-	antiSum := uniquePositions(antip)
+	antiSum := uniquePositions(m, antip)
 	fmt.Printf("Sum antinodes: %d\n", antiSum)
 }
