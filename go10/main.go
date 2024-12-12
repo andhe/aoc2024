@@ -157,6 +157,9 @@ func main() {
 
 	trailsum := calcScore(trails)
 	fmt.Println("Sum:", trailsum)
+
+	altsum := calcAltScore(trails)
+	fmt.Println("Alt:", altsum)
 }
 
 func calcScore(trails [][]pos) int {
@@ -178,6 +181,25 @@ func calcScore(trails [][]pos) int {
 		score := len(tails)
 		log.Printf("DEBUG: head %d/%d has %d", key.x, key.y, score)
 		sum += score
+	}
+
+	return sum
+}
+
+func calcAltScore(trails [][]pos) int {
+	headScores := make(map[pos]int)
+	sum := 0
+
+	for _, t := range trails {
+		if _, exists := headScores[t[0]]; exists {
+			headScores[t[0]] += 1
+		} else {
+			headScores[t[0]] = 1
+		}
+	}
+
+	for _, val := range headScores {
+		sum += val
 	}
 
 	return sum
