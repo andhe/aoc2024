@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 )
 
@@ -159,5 +160,25 @@ func main() {
 }
 
 func calcScore(trails [][]pos) int {
-	return 0
+	headTails := make(map[pos][]pos)
+	sum := 0
+
+	// map start positions to finish (removing duplicates)
+	for _, t := range trails {
+		tails := headTails[t[0]]
+
+		if slices.Index(tails, t[len(t)-1]) < 0 {
+			tails = append(tails, t[len(t)-1])
+		}
+
+		headTails[t[0]] = tails
+	}
+
+	for key, tails := range headTails {
+		score := len(tails)
+		log.Printf("DEBUG: head %d/%d has %d", key.x, key.y, score)
+		sum += score
+	}
+
+	return sum
 }
